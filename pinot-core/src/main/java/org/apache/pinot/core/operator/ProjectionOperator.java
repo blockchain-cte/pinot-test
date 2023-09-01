@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.apache.pinot.common.request.context.ExpressionContext;
 import org.apache.pinot.common.utils.HashUtil;
@@ -43,13 +44,13 @@ public class ProjectionOperator extends BaseProjectOperator<ProjectionBlock> {
   private final Map<String, ColumnContext> _columnContextMap;
 
   public ProjectionOperator(Map<String, DataSource> dataSourceMap,
-      @Nullable BaseOperator<DocIdSetBlock> docIdSetOperator) {
+                            @Nullable BaseOperator<DocIdSetBlock> docIdSetOperator) {
     _dataSourceMap = dataSourceMap;
     _docIdSetOperator = docIdSetOperator;
     _dataBlockCache = new DataBlockCache(new DataFetcher(dataSourceMap));
     _columnContextMap = new HashMap<>(HashUtil.getHashMapCapacity(dataSourceMap.size()));
     dataSourceMap.forEach(
-        (column, dataSource) -> _columnContextMap.put(column, ColumnContext.fromDataSource(dataSource)));
+            (column, dataSource) -> _columnContextMap.put(column, ColumnContext.fromDataSource(dataSource)));
   }
 
   @Override
@@ -88,8 +89,9 @@ public class ProjectionOperator extends BaseProjectOperator<ProjectionBlock> {
     // SQL statements such as SELECT 'literal' FROM myTable don't have any projection columns.
     if (!_dataSourceMap.keySet().isEmpty()) {
       int count = 0;
-      for (String col : _dataSourceMap.keySet()) {
-        if (count == _dataSourceMap.keySet().size() - 1) {
+      List<String> sortedKeys = _dataSourceMap.keySet().stream().sorted().collect(Collectors.toList());
+      for (String col : sortedKeys) {
+        if (count == sortedKeys.size() - 1) {
           stringBuilder.append(col);
         } else {
           stringBuilder.append(col).append(", ");

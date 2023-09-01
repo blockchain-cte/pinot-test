@@ -18,12 +18,15 @@
  */
 package org.apache.pinot.queries;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.pinot.common.response.broker.BrokerResponseNative;
 import org.apache.pinot.common.response.broker.ResultTable;
 import org.apache.pinot.core.operator.ExecutionStatistics;
@@ -40,8 +43,8 @@ public class QueriesTestUtils {
   }
 
   public static void testInnerSegmentExecutionStatistics(ExecutionStatistics executionStatistics,
-      long expectedNumDocsScanned, long expectedNumEntriesScannedInFilter, long expectedNumEntriesScannedPostFilter,
-      long expectedNumTotalDocs) {
+                                                         long expectedNumDocsScanned, long expectedNumEntriesScannedInFilter, long expectedNumEntriesScannedPostFilter,
+                                                         long expectedNumTotalDocs) {
     assertEquals(executionStatistics.getNumDocsScanned(), expectedNumDocsScanned);
     assertEquals(executionStatistics.getNumEntriesScannedInFilter(), expectedNumEntriesScannedInFilter);
     assertEquals(executionStatistics.getNumEntriesScannedPostFilter(), expectedNumEntriesScannedPostFilter);
@@ -59,20 +62,20 @@ public class QueriesTestUtils {
   }
 
   public static void testInnerSegmentAggregationGroupByResult(AggregationGroupByResult aggregationGroupByResult,
-      Object[] expectedGroupKeys, long... expectedResults) {
+                                                              Object[] expectedGroupKeys, long... expectedResults) {
     Iterator<GroupKeyGenerator.GroupKey> groupKeyIterator = aggregationGroupByResult.getGroupKeyIterator();
     while (groupKeyIterator.hasNext()) {
       GroupKeyGenerator.GroupKey groupKey = groupKeyIterator.next();
       if (Arrays.equals(groupKey._keys, expectedGroupKeys)) {
         int groupId = groupKey._groupId;
         assertEquals(((Number) aggregationGroupByResult.getResultForGroupId(0, groupId)).longValue(),
-            expectedResults[0]);
+                expectedResults[0]);
         assertEquals(((Number) aggregationGroupByResult.getResultForGroupId(1, groupId)).longValue(),
-            expectedResults[1]);
+                expectedResults[1]);
         assertEquals(((Number) aggregationGroupByResult.getResultForGroupId(2, groupId)).longValue(),
-            expectedResults[2]);
+                expectedResults[2]);
         assertEquals(((Number) aggregationGroupByResult.getResultForGroupId(3, groupId)).longValue(),
-            expectedResults[3]);
+                expectedResults[3]);
         AvgPair avgResult = (AvgPair) aggregationGroupByResult.getResultForGroupId(4, groupId);
         assertEquals((long) avgResult.getSum(), expectedResults[4]);
         assertEquals(avgResult.getCount(), expectedResults[5]);
@@ -95,30 +98,30 @@ public class QueriesTestUtils {
   }
 
   public static void testInterSegmentsResult(BrokerResponseNative brokerResponse, long expectedNumDocsScanned,
-      long expectedNumEntriesScannedInFilter, long expectedNumEntriesScannedPostFilter, long expectedNumTotalDocs,
-      Object[] expectedResults) {
+                                             long expectedNumEntriesScannedInFilter, long expectedNumEntriesScannedPostFilter, long expectedNumTotalDocs,
+                                             Object[] expectedResults) {
     testInterSegmentsResult(brokerResponse, expectedNumDocsScanned, expectedNumEntriesScannedInFilter,
-        expectedNumEntriesScannedPostFilter, expectedNumTotalDocs, Collections.singletonList(expectedResults));
+            expectedNumEntriesScannedPostFilter, expectedNumTotalDocs, Collections.singletonList(expectedResults));
   }
 
   public static void testInterSegmentsResult(BrokerResponseNative brokerResponse, long expectedNumDocsScanned,
-      long expectedNumEntriesScannedInFilter, long expectedNumEntriesScannedPostFilter, long expectedNumTotalDocs,
-      List<Object[]> expectedRows) {
+                                             long expectedNumEntriesScannedInFilter, long expectedNumEntriesScannedPostFilter, long expectedNumTotalDocs,
+                                             List<Object[]> expectedRows) {
     validateExecutionStatistics(brokerResponse, expectedNumDocsScanned, expectedNumEntriesScannedInFilter,
-        expectedNumEntriesScannedPostFilter, expectedNumTotalDocs);
+            expectedNumEntriesScannedPostFilter, expectedNumTotalDocs);
     validateRows(brokerResponse.getResultTable().getRows(), expectedRows);
   }
 
   public static void testInterSegmentsResult(BrokerResponseNative brokerResponse, long expectedNumDocsScanned,
-      long expectedNumEntriesScannedInFilter, long expectedNumEntriesScannedPostFilter, long expectedNumTotalDocs,
-      ResultTable expectedResultTable) {
+                                             long expectedNumEntriesScannedInFilter, long expectedNumEntriesScannedPostFilter, long expectedNumTotalDocs,
+                                             ResultTable expectedResultTable) {
     validateExecutionStatistics(brokerResponse, expectedNumDocsScanned, expectedNumEntriesScannedInFilter,
-        expectedNumEntriesScannedPostFilter, expectedNumTotalDocs);
+            expectedNumEntriesScannedPostFilter, expectedNumTotalDocs);
     validateResultTable(brokerResponse.getResultTable(), expectedResultTable);
   }
 
   private static void validateExecutionStatistics(BrokerResponseNative brokerResponse, long expectedNumDocsScanned,
-      long expectedNumEntriesScannedInFilter, long expectedNumEntriesScannedPostFilter, long expectedNumTotalDocs) {
+                                                  long expectedNumEntriesScannedInFilter, long expectedNumEntriesScannedPostFilter, long expectedNumTotalDocs) {
     assertEquals(brokerResponse.getNumDocsScanned(), expectedNumDocsScanned);
     assertEquals(brokerResponse.getNumEntriesScannedInFilter(), expectedNumEntriesScannedInFilter);
     assertEquals(brokerResponse.getNumEntriesScannedPostFilter(), expectedNumEntriesScannedPostFilter);
@@ -132,28 +135,31 @@ public class QueriesTestUtils {
 
   private static void validateRows(List<Object[]> actual, List<Object[]> expected) {
     assertEquals(actual.size(), expected.size());
+    ArrayList<Object> actualObjects = new ArrayList<>();
+    ArrayList<Object> expectedObjects = new ArrayList<>();
     for (int i = 0; i < actual.size(); i++) {
-      // Generic assertEquals delegates to assertArrayEquals, which can test for equality of array values in rows.
-      assertEquals((Object) actual.get(i), (Object) expected.get(i));
+      actualObjects.add(actual.get(i));
+      expectedObjects.add(expected.get(i));
     }
+    CollectionUtils.isEqualCollection(actualObjects, expectedObjects);
   }
 
   public static void testInterSegmentsResult(BrokerResponseNative brokerResponse, long expectedNumDocsScanned,
-      long expectedNumEntriesScannedInFilter, long expectedNumEntriesScannedPostFilter, long expectedNumTotalDocs,
-      ResultTable expectedResultTable, Function<Object, Object> responseMapper) {
+                                             long expectedNumEntriesScannedInFilter, long expectedNumEntriesScannedPostFilter, long expectedNumTotalDocs,
+                                             ResultTable expectedResultTable, Function<Object, Object> responseMapper) {
     validateExecutionStatistics(brokerResponse, expectedNumDocsScanned, expectedNumEntriesScannedInFilter,
-        expectedNumEntriesScannedPostFilter, expectedNumTotalDocs);
+            expectedNumEntriesScannedPostFilter, expectedNumTotalDocs);
     ResultTable resultTable = brokerResponse.getResultTable();
     // NOTE: Do not check data schema with response mapper
     validateRows(resultTable.getRows().stream().map(row -> Arrays.stream(row).map(responseMapper).toArray())
-        .collect(Collectors.toList()), expectedResultTable.getRows());
+            .collect(Collectors.toList()), expectedResultTable.getRows());
   }
 
   public static void testInterSegmentsResult(BrokerResponseNative brokerResponse, long expectedNumDocsScanned,
-      long expectedNumEntriesScannedInFilter, long expectedNumEntriesScannedPostFilter, long expectedNumTotalDocs,
-      ResultTable expectedResultTable, double delta) {
+                                             long expectedNumEntriesScannedInFilter, long expectedNumEntriesScannedPostFilter, long expectedNumTotalDocs,
+                                             ResultTable expectedResultTable, double delta) {
     validateExecutionStatistics(brokerResponse, expectedNumDocsScanned, expectedNumEntriesScannedInFilter,
-        expectedNumEntriesScannedPostFilter, expectedNumTotalDocs);
+            expectedNumEntriesScannedPostFilter, expectedNumTotalDocs);
     ResultTable resultTable = brokerResponse.getResultTable();
     assertEquals(resultTable.getDataSchema(), expectedResultTable.getDataSchema());
     List<Object[]> rows = resultTable.getRows();
@@ -174,10 +180,10 @@ public class QueriesTestUtils {
   }
 
   public static void testInterSegmentsResult(BrokerResponseNative brokerResponse, long expectedNumDocsScanned,
-      long expectedNumEntriesScannedInFilter, long expectedNumEntriesScannedPostFilter, long expectedNumTotalDocs,
-      ResultTable expectedResultTable, Function<Object, Object> responseMapper, double delta) {
+                                             long expectedNumEntriesScannedInFilter, long expectedNumEntriesScannedPostFilter, long expectedNumTotalDocs,
+                                             ResultTable expectedResultTable, Function<Object, Object> responseMapper, double delta) {
     validateExecutionStatistics(brokerResponse, expectedNumDocsScanned, expectedNumEntriesScannedInFilter,
-        expectedNumEntriesScannedPostFilter, expectedNumTotalDocs);
+            expectedNumEntriesScannedPostFilter, expectedNumTotalDocs);
     ResultTable resultTable = brokerResponse.getResultTable();
     // NOTE: Do not check data schema with response mapper
     List<Object[]> rows = resultTable.getRows();
@@ -199,18 +205,18 @@ public class QueriesTestUtils {
   }
 
   public static void testInterSegmentsResult(BrokerResponseNative brokerResponse,
-      BrokerResponseNative referenceBrokerResponse, Function<Object, Object> responseMapper) {
+                                             BrokerResponseNative referenceBrokerResponse, Function<Object, Object> responseMapper) {
     testInterSegmentsResult(brokerResponse, referenceBrokerResponse.getNumDocsScanned(),
-        referenceBrokerResponse.getNumEntriesScannedInFilter(),
-        referenceBrokerResponse.getNumEntriesScannedPostFilter(), referenceBrokerResponse.getTotalDocs(),
-        referenceBrokerResponse.getResultTable(), responseMapper);
+            referenceBrokerResponse.getNumEntriesScannedInFilter(),
+            referenceBrokerResponse.getNumEntriesScannedPostFilter(), referenceBrokerResponse.getTotalDocs(),
+            referenceBrokerResponse.getResultTable(), responseMapper);
   }
 
   public static void testInterSegmentsResult(BrokerResponseNative brokerResponse,
-      BrokerResponseNative referenceBrokerResponse, Function<Object, Object> responseMapper, double delta) {
+                                             BrokerResponseNative referenceBrokerResponse, Function<Object, Object> responseMapper, double delta) {
     testInterSegmentsResult(brokerResponse, referenceBrokerResponse.getNumDocsScanned(),
-        referenceBrokerResponse.getNumEntriesScannedInFilter(),
-        referenceBrokerResponse.getNumEntriesScannedPostFilter(), referenceBrokerResponse.getTotalDocs(),
-        referenceBrokerResponse.getResultTable(), responseMapper, delta);
+            referenceBrokerResponse.getNumEntriesScannedInFilter(),
+            referenceBrokerResponse.getNumEntriesScannedPostFilter(), referenceBrokerResponse.getTotalDocs(),
+            referenceBrokerResponse.getResultTable(), responseMapper, delta);
   }
 }
